@@ -11,7 +11,8 @@ setup(
         'scikit-learn',
         'bs4',
         'requests',
-        
     ],
-    description='A simple package for sentiment analysis'
+    description='A package from sentiment analysis (currently working for specific usecase)',
+    author='DEEPAK PAWADE',
+    author_email='deepakpawade.official@gmail.com'
 )

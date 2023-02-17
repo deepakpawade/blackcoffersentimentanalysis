@@ -5,9 +5,15 @@ import re
 import string
 import copy
 import os
+from nltk.tokenize import word_tokenize
+
 from sentiment_analysis_package import path_config
 stopwords_dir = path_config.STOPWORDS_PATH
-
+cols = ['URL_ID', 'URL', 'POSITIVE SCORE', 'NEGATIVE SCORE',
+       'POLARITY SCORE', 'SUBJECTIVITY SCORE', 'AVG SENTENCE LENGTH',
+       'PERCENTAGE OF COMPLEX WORDS', 'FOG INDEX',
+       'AVG NUMBER OF WORDS PER SENTENCE', 'COMPLEX WORD COUNT', 'WORD COUNT',
+       'SYLLABLE PER WORD', 'PERSONAL PRONOUNS', 'AVG WORD LENGTH']
 
 class sentiment_analysis:
     def __init__(self, dataframe, column):
@@ -28,7 +34,6 @@ class sentiment_analysis:
         """
         Get all the stopwords from the StopWords folder
         """
-        print(os.listdir())
         stopwords_files = ['StopWords_Auditor.txt',
                            'StopWords_Currencies.txt',
                            'StopWords_DatesandNumbers.txt',
@@ -47,8 +52,6 @@ class sentiment_analysis:
         """
         Get all the positive words from the MasterDictionary folder
         """
-        # with open('./sentiment_analysis_package/dictionaries/MasterDictionary/positive-words.txt', 'r') as file:
-        #     positive_words = [word.strip() for word in file.readlines()]
         with open(path_config.MASTERDICTIONARY_PATH +'/positive-words.txt', 'r') as file:
             positive_words = [word.strip() for word in file.readlines()]
 
@@ -60,8 +63,6 @@ class sentiment_analysis:
         """
         Get all the negative words from the MasterDictionary folder
         """
-        # with open('./sentiment_analysis_package/dictionaries/MasterDictionary/negative-words.txt', 'r') as file:
-        #     negative_words = [word.strip() for word in file.readlines()]
         with open(path_config.MASTERDICTIONARY_PATH +'/negative-words.txt', 'r') as file:
             negative_words = [word.strip() for word in file.readlines()]
 
@@ -118,11 +119,24 @@ class sentiment_analysis:
         return total_char/len(words)
 
     def _personal_pronouns(self, text):
-        pattern = r'\b(I|we|my|ours|us)\b(?!\b[A-Z]{2}\b)'
-        matches = re.findall(pattern, text)
-        return len(matches)
+        """
+        returns number of personal pronouns in the provided text whilst avoing abbreviations
+        """
+        # first implemented using regex
+        # pattern = r'\b(I|we|my|ours|us|We|My|Ours|Us)\b(?!\b[A-Z]{2}\b)'
+        # matches = re.findall(pattern, text)
+        # return len(matches)
+        
+        tokens = word_tokenize(text)
+        # might need nltk.download('averaged_perceptron_tagger')
 
-    def initialize_cols(self,dataframe):
+        pos_tags = nltk.pos_tag(tokens)
+
+        pronouns = [word for word, pos in pos_tags if pos == 'PRP']
+        return len(pronouns)
+        
+
+    def _initialize_cols(self,dataframe):
             dataframe['POSITIVE SCORE'] = 0
             dataframe['NEGATIVE SCORE'] = 0
             dataframe['POLARITY SCORE'] = 0
@@ -138,7 +152,26 @@ class sentiment_analysis:
             dataframe['AVG WORD LENGTH'] = 0
 
     def _get_analysis(self, dataframe):
-        self.initialize_cols(dataframe)
+        """
+        Requires : dataframe = dataframe which has the text to be analyzed
+
+        Returns the provided dataframe with following variables and corresponding calculations for each row.
+        1. All input variables in the dataframe
+        2. POSITIVE SCORE
+        3. NEGATIVE SCORE
+        4. POLARITY SCORE
+        5. SUBJECTIVITY SCORE
+        6. AVG SENTENCE LENGTH
+        7. PERCENTAGE OF COMPLEX WORDS
+        8. FOG INDEX
+        9. AVG NUMBER OF WORDS PER SENTENCE
+        10. COMPLEX WORD COUNT
+        11. WORD COUNT
+        12. SYLLABLE PER WORD
+        13. PERSONAL PRONOUNS
+        14. AVG WORD LENGTH
+        """
+        self._initialize_cols(dataframe)
         for i, row in dataframe.iterrows():
             text = row[self.column]
             sentences_uncleaned = nltk.sent_tokenize(text)
@@ -171,5 +204,14 @@ class sentiment_analysis:
             dataframe.at[i,'PERSONAL PRONOUNS'] = per_pro
             dataframe.at[i,'AVG WORD LENGTH'] = avg_word_len
             dataframe.at[i,'COMPLEX WORD COUNT'] = comp_word_count
+
+    
+        # print(dataframe.columns)
+        for col in dataframe.columns:
+            if col not in cols:
+                dataframe.drop(columns=[col],inplace=True)
+                print(f'dropped {col}')
+        dataframe = dataframe.reset_index(drop=True)
+        dataframe = dataframe.set_index('URL_ID')
 
         return dataframe

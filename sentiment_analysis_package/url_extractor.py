@@ -17,6 +17,9 @@ class url_extractor:
 
 
     def _extract_content(self, url):
+        """
+        Extracts contents from the provided url
+        """
 
         # send an HTTP GET request to the website
         response = requests.get(url)
@@ -40,9 +43,13 @@ class url_extractor:
         return content
 
     def _dataframe_itr(self, dataframe):
+        """
+        Iterates through the dataframe and adds extracted data to the corresponding rows with links
+        """
         dataframe['content'] = ''
 
         # iterate over the rows of the dataframe and extract the content of each link
+        # using df.apply() would work efficiently
         for i, row in dataframe.iterrows():
             try:
                 link = row['URL']
@@ -53,6 +60,3 @@ class url_extractor:
         dataframe = dataframe[dataframe['content'] != ""]
         dataframe = dataframe.dropna()
         return dataframe
-
-
-

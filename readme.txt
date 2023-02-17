@@ -1,4 +1,4 @@
-The code is in package form
+The code is packaged as follows
 input = 'input.xlsx'
 main script = text_analysis.py
 final output = 'output.xlsx'
